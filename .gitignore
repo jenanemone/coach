@@ -1,0 +1,58 @@
+# --- Python & Bytecode ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# --- Virtual Environments ---
+# Covers 'venv/', '.venv/', 'env/'
+venv/
+.venv/
+env/
+ENV/
+
+# --- Distribution & Packaging ---
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# --- IDEs & Editors (VS Code, PyCharm, Xcode) ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# --- Project-Specific CV / ML Assets ---
+# Exclude local dataset folders, test video clips, and heavy weight files 
+
+data/
+datasets/
+videos/
+output_videos/
+*.mp4
+*.mov
+*.avi
+*.h5
+*.pb
+*.onnx
+*.weights
+
+# --- Environment Variables & Logs ---
+.env
+*.log
