@@ -3,6 +3,7 @@
 import cv2
 import mediapipe as mp
 import pandas as pd
+import numpy as np
 
 mp_pose = mp.solutions.pose
 video_path = "IMG_2135.MOV"
@@ -87,3 +88,54 @@ cap.release()
 df = pd.DataFrame(frame_data)
 print(f"DataFrame successfully created with {len(df)} rows")
 print(df.head())
+
+# Now calculate right arm and wrist angles
+
+def calculate_3d_angle(a, b, c):
+    """Calculates the angle at point b given 3D coordinates a, b, c."""
+    ab = a - b
+    bc = c - b
+    
+    cosine_angle = np.dot(ab, bc) / (np.linalg.norm(ab) * np.linalg.norm(bc) + 1e-6)
+    angle = np.arccos(np.clip(cosine_angle, -1.0, 1.0))
+    return np.degrees(angle)
+
+angles = []
+wrist_heights = []
+
+# Group by frame to safely extract coordinates without pivot crashes
+for frame_ind, group in df.groupby('frame_index'):
+    # Map landmark IDs to their coordinate rows for this frame
+    landmarks = {row['landmark_index']: row for _, row in group.iterrows()}
+    
+    # Ensure right shoulder(12), elbow(14), and wrist(16) are present
+    if {12, 14, 16}.issubset(landmarks.keys()):
+        s = landmarks[12]
+        e = landmarks[14]
+        w = landmarks[16]
+        
+        shoulder = np.array([s['x'], s['y'], s['z']])
+        elbow = np.array([e['x'], e['y'], e['z']])
+        wrist = np.array([w['x'], w['y'], w['z']])
+        
+        # Calculate elbow flexion angle
+        angle = calculate_3d_angle(shoulder, elbow, wrist)
+        angles.append({'frame': frame_ind, 'elbow_angle': angle})
+        
+        # Track vertical position (Y=0 is top of frame in MediaPipe)
+        wrist_heights.append({
+            'frame': frame_ind, 
+            'wrist_y': w['y'], 
+            'shoulder_y': s['y']
+        })
+
+metrics_df = pd.DataFrame(angles)
+
+if len(metrics_df) > 0:
+    peak_reach_frame = min(wrist_heights, key=lambda x: x['wrist_y'])['frame']
+    print("--- Biomechanical Analysis Results ---")
+    print(f"Successfully analyzed arm movement across {len(metrics_df)} frames.")
+    print(f"Peak reach / Contact estimated at Frame: {peak_reach_frame}")
+    print(metrics_df.describe())
+else:
+    print("Warning: No matching arm landmarks found across frames.")
